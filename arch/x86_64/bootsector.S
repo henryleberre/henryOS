@@ -1,40 +1,47 @@
-ORG     0
-BITS    16
-GLOBAL  bootsector
-SECTION .text
+;  \- HenryOS Bootloader -/
+; ==========================
+; @ author:   Henry LE BERRE
+; @ 
+; @ Copyright (C) 2021 Henry LE BERRE
+
+; /===============\
+; | Memory Layout |
+; \===============/
+;
+; 
+; 
+; 
+; 
+; 
+; 
+
+
+ORG     0           ; Living Life Dangerously
+BITS    16          ; 16bit Real Mode
+GLOBAL  bootsector  ; Export Our 512 Byte Bootsector
+SECTION .text       ; Mark it as code
 
 bootsector:
-    ; Get Current Device Parameters
-    MOV AH, 0x08 ; 
-                 ; DL is already equal to the drive number
-    INT 0x13     ; Call BIOS Interrupt 0x13:set ft=nasm
+    ; Initialize Segment Registers
+    cli        ; Disable Interrupts
+    
+    mov ax, cs ; Fetch CS (either 0x7C0 or 0x0)
+    mov ds, ax ; DS=CS
+    mov es, ax ; ES=CS
+    mov fs, ax ; FS=CS
+    mov gs, ax ; GS=CS
+    
+    ; Setup the Stack Under The Bootlaoder
+    ; -> SS:SP=0x7C00 -> 0x0000:0x7C00
+    xor rax, rax    ; 
+    mov ss,  rax    ; SS=0x0
+    mov bp,  0x7C00 ; BP=0x7C00
+    mov sp,  bp     ; SP=BP=0x7C00
 
+    sti             ; Enable Interrupts
 
-    ; Load Kernel To 0x1000:0
-    MOV DH, 1
-    XOR DI, DI
-    MOV BX, 0x1000
-    MOV ES, BX
-    XOR BX, BX
+    
 
-    ; Enter Protected Mode: x86-32
-    CLI
-
-;	LGDT []
-;	MOV  AX, CR0
-;	OR   AL, 1
-;	MOV  CR0, AX
-	
-    STI 
-
-    ; Jump To x86-32 Kernel Code
-    JMP 0x1000:0
-
-    HLT
-
-; GDT: Global Descriptor Table
-	
-
-; Boot Sector Signature
-TIMES 510 - ($-$$) DB 0
-DW    0xAA55
+    ; Boot Sector Signature
+    TIMES 510 - ($-$$) DB 0
+    DW    0xAA55

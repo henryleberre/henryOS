@@ -1,21 +1,12 @@
-KERNEL_C_SRCS=$(wildcard ./*.c)
-KERNEL_OBJS=$(KERNEL_C_SRCS:.c=.o)
-
-all: dirs bootsector kernel
+all: dirs bootsector
 
 dirs:
-    mkdir -p bin
+	mkdir -p bin/
 
-%.o: %.c
-    $(CC) -o $@ -c $<
+%.o: %.S
+	nasm -f bin $< -o $@
 
-%.bin: %.S:
-    $(AS) -o $@ -c $<
+bootsector: arch/x86_64/bootsector.o
 
-bootsector: bootsector.bin
-
-kernel: $(KERNEL_OBJS)
-
-os: dirs bootsector kernel
-    
-    
+clean:
+	find . -name "*.o" -type f -delete
