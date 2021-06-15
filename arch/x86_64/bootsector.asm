@@ -46,32 +46,47 @@ bootsector:
     ;    to the buffer at ES:BX. We want 0x1000:0x0000 -> 0x10000
 
     ; TODO: Error Checking & Multiple Reads
+    mov si, 0x02
+.top:
     mov ah, 0x02   ; AH=Read Sectors From Drive (INT 0x13)
     mov al, 0x01   ; AL=Sectors to read
     xor ch, ch     ; CH=Cylinder
-    mov cl, 0x01   ; CL=Sector (Because indexing starts at 1)
+    mov cl, 0x02   ; CL=Sector (Because indexing starts at 1)
     xor dh, dh     ; DH=Head
                    ; DL=Drive Number (already assigned)
     mov ax, 0x1000 ;
     mov es, ax     ; ES=0x1000
     xor bx, bx     ; BS=0x0000
-
     int 0x13       ; Call the BIOS Interrupt
 
-    ; Test
-    jmp 0x1000:0
+    jnc success
+    dec si
+    cmp si, 0
+    jz  issue
+    xor ah, ah
+    int 0x13
+    jmp .top
+
+success:
+    mov ah, 0x09
+	mov al, 0x41
+	xor bh, bh
+	mov bl, 0xF
+	mov cx, 0x1
+	int 0x10
+    
+    jmp 0x1000:0x0000
+
+issue:
+    hlt
 
     ; [x] -> Enable Protected Mode
 
-    cli
-
-
-
-    sti
+    
 
     ; [x] -> Jump to the loaded Kernel
 
-
+    jmp 0x1000:0x0000
 
     ; [x] -> Terminate
     
