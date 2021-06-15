@@ -1,10 +1,10 @@
 KERNEL_C_SRCS   = $(wildcard kernel/*.c)
 KERNEL_C_OBJS   = $(KERNEL_C_SRCS:.c=.o)
 
-KERNEL_C_FLAGS  = -m32 -Wno-pointer-arith -Wno-unused-parameter
+KERNEL_C_FLAGS  = -m16 -Wno-pointer-arith -Wno-unused-parameter
 KERNEL_C_FLAGS += -nostdlib -nostdinc -ffreestanding -fno-pie
 KERNEL_C_FLAGS += -fno-stack-protector -fno-builtin-function
-KERNEL_C_FLAGS += -fno-builtin -masm=intel -c
+KERNEL_C_FLAGS += -fno-builtin -masm=intel -c -O0
 
 emulate: build
 	qemu-system-x86_64 -drive format=raw,file=bin/henryOS.bin,if=ide,index=0,media=disk

@@ -45,41 +45,19 @@ bootsector:
     ; 1. The BIOS Interrupt 0x13, with AH=0x02, will read
     ;    to the buffer at ES:BX. We want 0x1000:0x0000 -> 0x10000
 
-    ; TODO: Error Checking & Multiple Reads
-    mov si, 0x02
-.top:
-    mov ah, 0x02   ; AH=Read Sectors From Drive (INT 0x13)
-    mov al, 0x01   ; AL=Sectors to read
-    xor ch, ch     ; CH=Cylinder
-    mov cl, 0x02   ; CL=Sector (Because indexing starts at 1)
-    xor dh, dh     ; DH=Head
-                   ; DL=Drive Number (already assigned)
     mov ax, 0x1000 ;
     mov es, ax     ; ES=0x1000
-    xor bx, bx     ; BS=0x0000
-    int 0x13       ; Call the BIOS Interrupt
+    xor bx, bx     ; BX=0x0000
+    mov cl, 2      ; CL=2 (sector after bootsector)
+    call read_sector
 
-    jnc success
-    dec si
-    cmp si, 0
-    jz  issue
-    xor ah, ah
-    int 0x13
-    jmp .top
-
-success:
-    mov ah, 0x09
-	mov al, 0x41
-	xor bh, bh
-	mov bl, 0xF
-	mov cx, 0x1
-	int 0x10
-    
-    jmp 0x1000:0x0000
-
-issue:
-    hlt
-
+;mov ah, 0x09
+;mov al, 0x41
+;xor bh, bh
+;mov bl, 0xF
+;mov cx, 0x1
+;int 0x10
+;
     ; [x] -> Enable Protected Mode
 
     
@@ -90,9 +68,38 @@ issue:
 
     ; [x] -> Terminate
     
+    cli
+    hlt
+
+    ; [x] -> Misc Functions
+
+read_sector: ; ES:BX=Buffer. CL=Sector # (starting from 1)
+    mov si, 0x02
+
+read_sector_loop:
+    mov ah, 0x02   ; AH=Read Sectors From Drive (INT 0x13)
+    mov al, 0x01   ; AL=Sectors to read
+    xor ch, ch     ; CH=Cylinder
+    xor dh, dh     ; DH=Head
+                   ; DL=Drive Number (already assigned)
+    int 0x13       ; Call the BIOS Interrupt
+
+    jnc read_sector_success
+    dec si
+    cmp si, 0
+    jz  read_sector_error
+    xor ah, ah
+    int 0x13
+    jmp read_sector_loop
+
+read_sector_success:
+    ret
+
+read_sector_error:
+    cli
     hlt
 
     ; [x] -> EOF & Signature
     
-    TIMES 510 - ($-$$) DB 0 ; 0-out Until Signature
+    TIMES 510 - ($-$$) DB 0 ; 0-out Until Signature 
     DW    0xAA55            ; Boot Sector Signature
