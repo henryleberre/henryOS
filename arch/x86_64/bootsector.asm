@@ -51,13 +51,6 @@ bootsector:
     mov cl, 2      ; CL=2 (sector after bootsector)
     call read_sector
 
-;mov ah, 0x09
-;mov al, 0x41
-;xor bh, bh
-;mov bl, 0xF
-;mov cx, 0x1
-;int 0x10
-;
     ; [x] -> Enable Protected Mode
 
     
