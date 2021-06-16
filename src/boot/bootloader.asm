@@ -4,9 +4,9 @@
 ; @ 
 ; @ Copyright (C) 2021 Henry LE BERRE
 
-BITS    16          ; 16bit Real Mode
-GLOBAL  bootsector  ; Export Our 512 Byte Bootsector
-SECTION .text       ; Mark it as code
+BITS    16 ; 16bit Real Mode
+
+SECTION .henryOS_bootsector
 
 bootsector:
     ; [x] Initial State:
