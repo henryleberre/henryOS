@@ -1,7 +1,7 @@
-KERNEL_C_SRCS   = $(wildcard src/kernel/*.c)
+KERNEL_C_SRCS   = $(wildcard kernel/*.c)
 KERNEL_C_OBJS   = $(KERNEL_C_SRCS:.c=.o)
 
-BOOT_ASM_SRCS   = $(wildcard src/boot/*.asm)
+BOOT_ASM_SRCS   = $(wildcard boot/*.asm)
 BOOT_ASM_OBJS   = $(BOOT_ASM_SRCS:.asm=.o)
 
 KERNEL_C_FLAGS  = -m16 -Wno-pointer-arith -Wno-unused-parameter
@@ -25,10 +25,10 @@ dirs:
 	nasm -f bin $< -o $@
 
 bootsector: dirs $(BOOT_ASM_OBJS)
-	cp ./src/boot/bootloader.o $(BOOT_TARGET_BIN)
+	cp ./boot/bootloader.o $(BOOT_TARGET_BIN)
 
 kernel: dirs $(KERNEL_C_OBJS)
-	$(LD) -m elf_i386 -o $(KERNEL_TARGET_BIN) $(KERNEL_C_OBJS) -Tsrc/kernel/kernel.ld --oformat=binary
+	$(LD) -m elf_i386 -o $(KERNEL_TARGET_BIN) $(KERNEL_C_OBJS) -Tkernel/kernel.ld --oformat=binary
 	dd if=/dev/zero bs=1 count=512 >> $(KERNEL_TARGET_BIN)
 
 build: dirs bootsector kernel
