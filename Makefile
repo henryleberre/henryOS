@@ -2,7 +2,7 @@ KERNEL_C_SRCS   = $(wildcard kernel/*.c)
 KERNEL_C_OBJS   = $(KERNEL_C_SRCS:.c=.o)
 
 BOOT_ASM_SRCS   = $(wildcard boot/*.asm)
-BOOT_ASM_OBJS   = $(BOOT_ASM_SRCS:.asm=.o)
+BOOT_ASM_OBJS   = $(BOOT_ASM_SRCS:.asm=.bin)
 
 KERNEL_C_FLAGS  = -m16 -Wno-pointer-arith -Wno-unused-parameter
 KERNEL_C_FLAGS += -nostdlib -nostdinc -ffreestanding -fno-pie
@@ -21,11 +21,11 @@ dirs:
 %.o: %.c
 	$(CC) $(KERNEL_C_FLAGS) $< -o $@
 
-%.o: %.asm
+%.bin: %.asm
 	nasm -f bin $< -o $@
 
 bootsector: dirs $(BOOT_ASM_OBJS)
-	cp ./boot/bootloader.o $(BOOT_TARGET_BIN)
+	cp ./boot/bootloader.bin $(BOOT_TARGET_BIN)
 
 kernel: dirs $(KERNEL_C_OBJS)
 	$(LD) -m elf_i386 -o $(KERNEL_TARGET_BIN) $(KERNEL_C_OBJS) -Tkernel/kernel.ld --oformat=binary
