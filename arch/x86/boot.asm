@@ -1,23 +1,24 @@
-;  \- HenryOS Bootloader -/
-; ==========================
-; @ Author:   Henry LE BERRE
-; @ 
-; @ Copyright (C) 2021 Henry LE BERRE
+;   _________________________________________________________________
+;  /|\/‾‾\/‾\_____/‾\/‾‾\|@ An operating system by Henry LE BERRE  /|\ 
+; /|||\__/|‾‾‾‾‾‾‾‾‾|\__/|@                                       /|||\
+;<|||||><|| HenryOS ||><||@                                      <|||||>
+; \|||/‾‾\|_________|/‾‾\|@                                       \|||/
+;  \|/\__/\_/‾‾‾‾‾\_/\__/|@ Copyright (C) 2021 Henry LE BERRE      \|/ 
+;   ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
-%define KERNEL_SECTOR_COUNT 1
+%define KERNEL_SECTOR_COUNT 1         ; Number of Sectors to load
 
 ORG  0
 BITS 16
 
-                                      ; -----------------------------------------------
+;=====================================================================================
 boot0:
-
     jmp 0x07C0:boot1                  ; --->| Normalize CS:IP (CS=0x07C0)
 boot1:
     cld                               ; --->| 
     
-    ; Stack: SS:IP=0x0000:0x7C00
-    ; Stack is under the loaded Bootloader
+    ; [X]: Stack: SS:IP=0x0000:0x7C00
+    ;      Stack is under the loaded Bootloader
     cli                               ; --->| Modifying SS, so disbale Interrupts
     xor ax, ax                        ; --->| 
     mov ss, ax                        ; --->| SS=0x0000
@@ -26,12 +27,12 @@ boot1:
     mov bp, 0x7C00                    ; --->| BP=0x7C00
     mov sp, 0x7C00                    ; --->| SP=0x7C00
 
-    ; Segment Registers: ES=DS=0x07C0
+    ; [X]: Segment Registers: ES=DS=0x07C0
     mov ax, 0x07C0                    ; --->|
     mov es, ax                        ; --->|
     mov ds, ax                        ; --->|
 
-    ; Load Kernel Into Memory (ES:BX=0x1000:0x0000)
+    ; [X]: Load Kernel Into Memory (ES:BX=0x1000:0x0000)
     mov ax, 0x1000                    ; --->|
     mov es, ax                        ; --->| ES=0x1000 |
     xor bx, bx                        ; --->| BX=0x0000 |
@@ -43,13 +44,36 @@ read_next_sector:                     ; --->|
     jnz read_next_sector              ; --->| Handle Loop
     add bx, 0x200                     ; --->| Increment the destination buffer by 1 Sector
 boot2:                                ; --->|
-    jmp 0x1000:0x0000                 ; --->| Jump to Kernel
-                                      ; -----------------------------------------------
+    jmp 0x1000:0x0000
 
+;=====================================================================================
 
+ALIGN 16
+pgdt:
+    dw (gdt_end - gdt_start - 1)
+    dd (0x7C00 + gdt_start)
 
+ALIGN 16
+gdt_start:
+gdt_null:
+    dq 0
+gdt_code_segment:
+    dw 0xFFFF
+    dw 0x0000
+    db 0x00
+    db 0b10011010
+    db 0b11001111
+    db 0x00
+gdt_data_segment:
+    dw 0xFFFF
+    dw 0x0000
+    db 0x00
+    db 0b10010010
+    db 0b11001111
+    db 0x00
+gdt_end:
 
-
+;=====================================================================================
 
 func_readSector:                      ; Arguments: |- DL    | Drive  Number
                                       ;            |- ES:BX | Destination Buffer
@@ -88,11 +112,16 @@ func_readSector_ret:                  ; --->|
                                       ; --->| 
     ret                               ; --->| 
 
-
-
-
-
+;=====================================================================================
 
 mbr_sig:
     times 0x200-2-($-$$) db 0 ; --->| Padd Sector with 0s
     dw    0xAA55              ; --->| MBR  Signature
+
+;   _________________________________________________________________
+;  /|\/‾‾\/‾\_____/‾\/‾‾\|@ An operating system by Henry LE BERRE  /|\ 
+; /|||\__/|‾‾‾‾‾‾‾‾‾|\__/|@                                       /|||\
+;<|||||><|| HenryOS ||><||@                                      <|||||>
+; \|||/‾‾\|_________|/‾‾\|@                                       \|||/
+;  \|/\__/\_/‾‾‾‾‾\_/\__/|@ Copyright (C) 2021 Henry LE BERRE      \|/ 
+;   ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
