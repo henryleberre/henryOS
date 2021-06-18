@@ -9,3 +9,4 @@ A wannabe x86-64 operating system.
 + [https://wiki.osdev.org/Linker_Scripts](https://wiki.osdev.org/Linker_Scripts)
 + [https://books.google.fr/books?id=1L7PVOhfUIoC&lpg=PA492&ots=zjAKTcSu3k&pg=PA492&redir_esc=y#v=onepage&q&f=false](https://books.google.fr/books?id=1L7PVOhfUIoC&lpg=PA492&ots=zjAKTcSu3k&pg=PA492&redir_esc=y#v=onepage&q&f=false)
 + [https://stanislavs.org/helppc/int_13-2.html](https://stanislavs.org/helppc/int_13-2.html)
++ [http://www.independent-software.com/operating-system-development-enabling-a20-line.html](http://www.independent-software.com/operating-system-development-enabling-a20-line.html)
