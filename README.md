@@ -1,4 +1,4 @@
-# <p align="center">HenryOS</p>
+<h1 align="center">HenryOS</h1>
 
 A wannabe x86-64 operating system.
 
