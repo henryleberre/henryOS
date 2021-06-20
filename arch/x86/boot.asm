@@ -6,15 +6,15 @@
 ;  \|/\__/\_/‾‾‾‾‾\_/\__/|@ Copyright (C) 2021 Henry LE BERRE      \|/ 
 ;   ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
-%define KERNEL_SECTOR_COUNT 1         ; Number of Sectors to load
+%define TOTAL_SECTOR_COUNT 2          ; 
 
 ORG  0
 BITS 16
 
 ;=====================================================================================
-boot0:
-    jmp 0x07C0:boot1                  ; --->| Normalize CS:IP (CS=0x07C0)
-boot1:
+boot16_0:
+    jmp 0x07C0:boot16_1               ; --->| Normalize CS:IP (CS=0x07C0)
+boot16_1:
     cld                               ; --->| 
     
     ; [X]: Stack: SS:IP=0x0000:0x7C00
@@ -37,41 +37,49 @@ boot1:
     mov es, ax                        ; --->| ES=0x1000 |
     xor bx, bx                        ; --->| BX=0x0000 |
     mov cl, 2                         ; --->| CL=2      | Current Sector Number
-    mov si, KERNEL_SECTOR_COUNT       ; --->|           | Numer of Sectors left to read
+    mov si, (TOTAL_SECTOR_COUNT-1)    ; --->|           | Numer of Sectors left to read
 read_next_sector:                     ; --->|
     call 0x07C0:func_readSector       ; --->| Read current Sector
     dec si                            ; --->| Decrement remaining Sectors to read Counter
     jnz read_next_sector              ; --->| Handle Loop
     add bx, 0x200                     ; --->| Increment the destination buffer by 1 Sector
-boot2:                                ; --->|
-    jmp 0x1000:0x0000
+boot16_2:
+    mov ah, 0x00
+    mov al, 0x13
+    int 0x10
 
-;=====================================================================================
+boot16_3:                             ; --->|
+    cli
 
-ALIGN 16
-pgdt:
-    dw (gdt_end - gdt_start - 1)
-    dd (0x7C00 + gdt_start)
+    in al, 0x92
+    or al, 2
+    out 0x92, al
 
-ALIGN 16
-gdt_start:
-gdt_null:
-    dq 0
-gdt_code_segment:
-    dw 0xFFFF
-    dw 0x0000
-    db 0x00
-    db 0b10011010
-    db 0b11001111
-    db 0x00
-gdt_data_segment:
-    dw 0xFFFF
-    dw 0x0000
-    db 0x00
-    db 0b10010010
-    db 0b11001111
-    db 0x00
-gdt_end:
+    lgdt [gdt_descriptor]
+    mov   eax, cr0 
+    or    al,  1
+    mov   cr0, eax
+
+    mov ax, (gdt_data_segment - gdt_start)
+    mov ds, ax
+    mov es, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov esp, 0x30000
+
+    jmp (gdt_code_segment-gdt_start):(0x7C00+boot32_4)
+
+BITS 32
+boot32_4:
+    ;mov BYTE[0xA0000], 0xCC 
+    ;mov BYTE[0xA0000+1], 0xCA 
+    ;mov BYTE[0xA0000+2], 0xDA 
+    jmp (gdt_code_segment-gdt_start):0x10000
+
+    cli
+    hlt
 
 ;=====================================================================================
 
@@ -113,6 +121,31 @@ func_readSector_ret:                  ; --->|
     ret                               ; --->| 
 
 ;=====================================================================================
+
+ALIGN 16
+gdt_descriptor:
+    dw (gdt_end - gdt_start - 1)
+    dd (0x7C00+gdt_start)
+
+ALIGN 16
+gdt_start:
+gdt_null:
+    dq 0
+gdt_code_segment:
+    dw 0xffff
+    dw 0x0000
+    db 0x00
+    db 0b10011010
+    db 0b11001111
+    db 0x00
+gdt_data_segment:
+    dw 0xffff
+    dw 0x0000
+    db 0x00
+    db 0b10010010
+    db 0b11001111
+    db 0x00
+gdt_end:
 
 mbr_sig:
     times 0x200-2-($-$$) db 0 ; --->| Padd Sector with 0s
