@@ -2,7 +2,7 @@ OUTPUT_FORMAT("binary")
 
 /* Used to specify the first instruction         */
 /* This section is created in src/kernel/entry.c */
-ENTRY(kernel_entry)
+ENTRY(kernel_main)
 
 SECTIONS {
     . = 0x10000; /* Kernel load address            */
