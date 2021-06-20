@@ -73,14 +73,16 @@ boot16_3:                             ; --->|
 boot32_4:
     sti
 
+    ; Should be executing the kernel...
     mov eax, 0x10000
     call eax
 
-    mov esi, 320*200
-a:
-    mov BYTE[0xA0000+esi], 0xCC
-    dec esi
-    jnz a
+
+;    mov esi, 320*200
+;a:
+;    mov BYTE[0xA0000+esi], 0xCC
+;    dec esi
+;    jnz a
 
 
     cli
