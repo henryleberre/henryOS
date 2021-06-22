@@ -1,12 +1,13 @@
 ;   _________________________________________________________________
 ;  /|\/‾‾\/‾\_____/‾\/‾‾\|@ An operating system by Henry LE BERRE  /|\ 
 ; /|||\__/|‾‾‾‾‾‾‾‾‾|\__/|@                                       /|||\
-;<|||||><|| HenryOS ||><||@                                      <|||||>
+;<|||||><|| HenryOS ||><||@ Section: Sector I                    <|||||>
 ; \|||/‾‾\|_________|/‾‾\|@                                       \|||/
 ;  \|/\__/\_/‾‾‾‾‾\_/\__/|@ Copyright (C) 2021 Henry LE BERRE      \|/ 
 ;   ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
-%define TOTAL_SECTOR_COUNT 2          ; 
+%define KERNEL_SECTOR_OFFSET 3
+%define KERNEL_SECTOR_COUNT  2          ; 
 
 [org   0]
 [bits 16]
@@ -32,12 +33,19 @@ boot16_1:
     mov es, ax                        ; --->|
     mov ds, ax                        ; --->|
 
+    ; [X]: Load Bootloader's IInd Sector
+    mov ax, 0x07C0
+    mov es, ax
+    mov bx, 0x200
+    mov cl, 2
+    call 0x07C0:func_readSector
+
     ; [X]: Load Kernel Into Memory (ES:BX=0x1000:0x0000)
     mov ax, 0x1000                    ; --->|
     mov es, ax                        ; --->| ES=0x1000 |
     xor bx, bx                        ; --->| BX=0x0000 |
-    mov cl, 2                         ; --->| CL=2      | Current Sector Number
-    mov si, (TOTAL_SECTOR_COUNT-1)    ; --->|           | Numer of Sectors left to read
+    mov cl, KERNEL_SECTOR_OFFSET      ; --->| CL=2      | Current Sector Number
+    mov si, KERNEL_SECTOR_COUNT       ; --->|           | Numer of Sectors left to read
 read_next_sector:                     ; --->|
     call 0x07C0:func_readSector       ; --->| Read current Sector
     dec si                            ; --->| Decrement remaining Sectors to read Counter
@@ -73,16 +81,24 @@ boot16_3:                             ; --->|
 boot32_4:
     sti
 
-    ; Should be executing the kernel...
-    mov eax, 0x10000
-    call eax
+ ;   ; Should be executing the kernel...
+ ;   mov eax, 0x0
+ ;   call 0x10000
 
 
-;    mov esi, 320*200
-;a:
-;    mov BYTE[0xA0000+esi], 0xCC
-;    dec esi
-;    jnz a
+    mov esi, 320*200
+a:
+    mov eax, esi
+    xor ah, al
+    add al, ah
+    mov edx, esi
+    shr edx, 16
+    xor dh, dl
+    add dl, dh
+    add al, dl
+    mov BYTE[0xA0000+esi], al
+    dec esi
+    jnz a
 
 
     cli
@@ -155,118 +171,53 @@ gdt_descriptor:
 x86_32_CS equ (gdt_code_segment - gdt_start)
 x86_32_DS equ (gdt_data_segment - gdt_start)
 
+mbr_sig:
+    times 0x200-2-($-$$) db 0 ; --->| Padd Sector with 0s
+    dw    0xAA55              ; --->| MBR  Signature
+
+
+
+;   _________________________________________________________________
+;  /|\/‾‾\/‾\_____/‾\/‾‾\|@ An operating system by Henry LE BERRE  /|\ 
+; /|||\__/|‾‾‾‾‾‾‾‾‾|\__/|@                                       /|||\
+;<|||||><|| HenryOS ||><||@ Section: Sector II                   <|||||>
+; \|||/‾‾\|_________|/‾‾\|@                                       \|||/
+;  \|/\__/\_/‾‾‾‾‾\_/\__/|@ Copyright (C) 2021 Henry LE BERRE      \|/ 
+;   ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+
 dummy_isr:
     pushad
     cld
     popad
     iret
 
+%macro  make_dummy_irq 0
+
+    dw 0x0000             ; Offset   (High Part)
+    dw 0x0008             ; Selector
+    db 0x00               ; Zero     (Unused)
+    db 0x8E | 0x60        ; 
+    dw (0x7C00+dummy_isr) ; Offset   (Low Part)
+
+%endmacro
+
 idt_start:
-irq0:
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
-      dw (0x7C00+dummy_isr)
-      dw 0x0008
-      db 0x00
-      db 0b10101110
-      dw 0x0000
-
+%rep 47
+make_dummy_irq
+%endrep
 idt_end:
 
 idt_descriptor:
     dw (idt_end - idt_start - 1)
     dd (0x7C00+idt_start)
 
-mbr_sig:
-    times 0x200-2-($-$$) db 0 ; --->| Padd Sector with 0s
-    dw    0xAA55              ; --->| MBR  Signature
+sector_2_0s:
+    times (2*0x200)-($-$$) db 0 ; --->| Padd Sector with 0s
 
 ;   _________________________________________________________________
 ;  /|\/‾‾\/‾\_____/‾\/‾‾\|@ An operating system by Henry LE BERRE  /|\ 
 ; /|||\__/|‾‾‾‾‾‾‾‾‾|\__/|@                                       /|||\
-;<|||||><|| HenryOS ||><||@                                      <|||||>
+;<|||||><|| HenryOS ||><||@ Section: EOF                        <|||||>
 ; \|||/‾‾\|_________|/‾‾\|@                                       \|||/
 ;  \|/\__/\_/‾‾‾‾‾\_/\__/|@ Copyright (C) 2021 Henry LE BERRE      \|/ 
 ;   ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
